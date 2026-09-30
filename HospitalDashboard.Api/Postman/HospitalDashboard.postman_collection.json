@@ -1,0 +1,102 @@
+{
+  "info": {
+    "name": "Hospital Dashboard API",
+    "description": "Patients, Beds, and Admissions endpoints for the Real-Time Hospital Admissions Dashboard project.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5181" }
+  ],
+  "item": [
+    {
+      "name": "Patients",
+      "item": [
+        { "name": "Get All Patients", "request": { "method": "GET", "url": "{{baseUrl}}/api/patients" } },
+        { "name": "Get Patient by Id", "request": { "method": "GET", "url": "{{baseUrl}}/api/patients/{{patientId}}" } },
+        {
+          "name": "Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/patients",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"dob\": \"1995-02-10\",\n  \"gender\": \"Female\",\n  \"contactPhone\": \"555-0199\",\n  \"admissions\": []\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Patient",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/patients/{{patientId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith-Updated\",\n  \"dob\": \"1995-02-10\",\n  \"gender\": \"Female\",\n  \"contactPhone\": \"555-0199\"\n}"
+            }
+          }
+        },
+        { "name": "Delete Patient", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/patients/{{patientId}}" } }
+      ]
+    },
+    {
+      "name": "Beds",
+      "item": [
+        { "name": "Get All Beds", "request": { "method": "GET", "url": "{{baseUrl}}/api/beds" } },
+        { "name": "Get Bed by Id", "request": { "method": "GET", "url": "{{baseUrl}}/api/beds/{{bedId}}" } },
+        {
+          "name": "Create Bed",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/beds",
+            "body": { "mode": "raw", "raw": "{\n  \"ward\": \"ICU\",\n  \"bedNumber\": \"103\",\n  \"status\": \"Available\"\n}" }
+          }
+        },
+        {
+          "name": "Update Bed",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/beds/{{bedId}}",
+            "body": { "mode": "raw", "raw": "{\n  \"ward\": \"ICU\",\n  \"bedNumber\": \"103\",\n  \"status\": \"Occupied\"\n}" }
+          }
+        },
+        { "name": "Delete Bed", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/beds/{{bedId}}" } }
+      ]
+    },
+    {
+      "name": "Admissions",
+      "item": [
+        { "name": "Get All Admissions", "request": { "method": "GET", "url": "{{baseUrl}}/api/admissions" } },
+        { "name": "Get Admission by Id", "request": { "method": "GET", "url": "{{baseUrl}}/api/admissions/{{admissionId}}" } },
+        {
+          "name": "Create Admission",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/admissions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": \"{{patientId}}\",\n  \"bedId\": \"{{bedId}}\",\n  \"status\": \"Admitted\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Discharge Admission (Update)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/admissions/{{admissionId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Discharged\",\n  \"dischargedAt\": \"2026-10-01T09:00:00Z\"\n}"
+            }
+          }
+        },
+        { "name": "Delete Admission", "request": { "method": "DELETE", "url": "{{baseUrl}}/api/admissions/{{admissionId}}" } }
+      ]
+    }
+  ]
+}
