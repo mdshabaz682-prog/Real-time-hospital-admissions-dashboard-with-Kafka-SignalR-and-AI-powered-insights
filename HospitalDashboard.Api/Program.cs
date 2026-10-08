@@ -36,6 +36,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+   builder.Services.AddCors(options =>
+   {
+       options.AddPolicy("AngularDev", policy =>
+           policy.WithOrigins("http://localhost:4200")
+                 .AllowAnyHeader()
+                 .AllowAnyMethod()
+                 .AllowCredentials());
+   });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -65,6 +73,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+   app.UseCors("AngularDev");
 
 app.UseAuthentication();
 app.UseAuthorization();
