@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
-
+   using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 namespace HospitalDashboard.Api.Models;
 
 public class Staff
@@ -11,8 +11,7 @@ public class Staff
 
     [Required, MaxLength(50)]
     public string Role { get; set; } = string.Empty;
-
-    [MaxLength(150)]
+       [JsonIgnore]
     public string? Email { get; set; }
 
     [Required, MaxLength(50)]
