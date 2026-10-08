@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using HospitalDashboard.Api.Models;
 
@@ -7,7 +8,7 @@ public static class AdmissionEndpoints
 {
     public static void MapAdmissionEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/admissions").WithTags("Admissions");
+        var group = app.MapGroup("/api/admissions").WithTags("Admissions").RequireAuthorization();
 
         group.MapGet("/", async (HospitalDashboardContext db) =>
             await db.Admissions.Include(a => a.Patient).Include(a => a.Bed).Include(a => a.Staff).ToListAsync());
@@ -50,6 +51,6 @@ public static class AdmissionEndpoints
             db.Admissions.Remove(admission);
             await db.SaveChangesAsync();
             return Results.NoContent();
-        });
+        }).RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });
     }
 }

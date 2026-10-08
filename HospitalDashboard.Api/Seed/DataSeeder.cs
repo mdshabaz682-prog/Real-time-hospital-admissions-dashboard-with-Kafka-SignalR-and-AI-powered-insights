@@ -6,12 +6,18 @@ public static class DataSeeder
 {
     public static void SeedData(HospitalDashboardContext db)
     {
-        if (db.Patients.Any()) return; // already seeded, skip
+        if (db.Patients.Any()) return;
 
         var staff = new List<Staff>
         {
-            new() { Name = "Dr. Sarah Chen", Role = "Physician", Email = "s.chen@hospital.example" },
-            new() { Name = "James Okafor", Role = "Nurse", Email = "j.okafor@hospital.example" },
+            new() {
+                Name = "Shabaaz Mohammad", Role = "Admin", Email = "shabaaz@hospital.example",
+                Username = "shabaaz.md", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!")
+            },
+            new() {
+                Name = "Jilani Shaik", Role = "Nurse", Email = "j.shaik@hospital.example",
+                Username = "jilani.shaik", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!")
+            },
         };
 
         var beds = new List<Bed>

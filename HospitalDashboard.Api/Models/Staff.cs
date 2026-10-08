@@ -15,6 +15,12 @@ public class Staff
     [MaxLength(150)]
     public string? Email { get; set; }
 
+    [Required, MaxLength(50)]
+    public string Username { get; set; } = string.Empty;
+
+    [Required]
+    public string PasswordHash { get; set; } = string.Empty;
+
     public ICollection<Admission> Admissions { get; set; } = new List<Admission>();
     public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
 }

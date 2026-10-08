@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using HospitalDashboard.Api.Models;
 
@@ -7,7 +8,7 @@ public static class BedEndpoints
 {
     public static void MapBedEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/beds").WithTags("Beds");
+        var group = app.MapGroup("/api/beds").WithTags("Beds").RequireAuthorization();
 
         group.MapGet("/", async (HospitalDashboardContext db) =>
             await db.Beds.ToListAsync());
@@ -43,6 +44,6 @@ public static class BedEndpoints
             db.Beds.Remove(bed);
             await db.SaveChangesAsync();
             return Results.NoContent();
-        });
+        }).RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });
     }
 }
