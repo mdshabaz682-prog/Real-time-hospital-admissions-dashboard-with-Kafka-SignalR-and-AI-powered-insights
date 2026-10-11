@@ -8,6 +8,7 @@ using HospitalDashboard.Api;
 using HospitalDashboard.Api.Endpoints;
 using HospitalDashboard.Api.Auth;
 using HospitalDashboard.Api.Hubs;
+using HospitalDashboard.Api.Messaging;
 using HospitalDashboard.Api.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,6 +50,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddSignalR();
+builder.Services.AddSingleton<EventPublisher>();
 
 builder.Services.AddCors(options =>
 {

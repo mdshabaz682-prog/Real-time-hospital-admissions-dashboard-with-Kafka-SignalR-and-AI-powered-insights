@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using HospitalDashboard.Api.Messaging;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -19,19 +21,25 @@ public static class AdmissionEndpoints
             await db.Admissions.Include(a => a.Patient).Include(a => a.Bed).Include(a => a.Staff)
                 .FirstOrDefaultAsync(a => a.Id == id) is Admission a ? Results.Ok(a) : Results.NotFound());
 
-        group.MapPost("/", async (Admission admission, HospitalDashboardContext db, IHubContext<AdmissionsHub> hub) =>
+        
+                group.MapPost("/", async (Admission admission, ClaimsPrincipal user, HospitalDashboardContext db, EventPublisher events) =>
         {
-            var patientExists = await db.Patients.AnyAsync(p => p.Id == admission.PatientId);
-            if (!patientExists) return Results.BadRequest($"Patient {admission.PatientId} does not exist.");
+            if (!await db.Patients.AnyAsync(p => p.Id == admission.PatientId))
+                return Results.BadRequest($"Patient {admission.PatientId} does not exist.");
 
             var bed = await db.Beds.FindAsync(admission.BedId);
             if (bed is null) return Results.BadRequest($"Bed {admission.BedId} does not exist.");
+            if (bed.Status != "Available") return Results.BadRequest($"Bed is {bed.Status}, not Available.");
 
-            bed.Status = "Occupied";
-            db.Admissions.Add(admission);
-            await db.SaveChangesAsync();
-            await hub.Clients.All.SendAsync("DataChanged", "admissions");
-            return Results.Created($"/api/admissions/{admission.Id}", admission);
+            var staffId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var admissionId = Guid.NewGuid();
+            var now = DateTime.UtcNow;
+
+            await events.PublishAsync("bed-events", admissionId.ToString(), new AdmissionCreated(
+                Guid.NewGuid(), "AdmissionCreated", admissionId, admission.PatientId,
+                admission.BedId, staffId, admission.AdmittedAt == default ? now : admission.AdmittedAt, now));
+
+            return Results.Accepted($"/api/admissions/{admissionId}", new { admissionId });
         });
 
         group.MapPut("/{id}", async (Guid id, Admission input, HospitalDashboardContext db, IHubContext<AdmissionsHub> hub) =>
