@@ -7,6 +7,7 @@ using Microsoft.OpenApi;
 using HospitalDashboard.Api;
 using HospitalDashboard.Api.Endpoints;
 using HospitalDashboard.Api.Auth;
+using HospitalDashboard.Api.Hubs;
 using HospitalDashboard.Api.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,17 +34,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                    context.Token = token;
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
-   builder.Services.AddCors(options =>
-   {
-       options.AddPolicy("AngularDev", policy =>
-           policy.WithOrigins("http://localhost:4200")
-                 .AllowAnyHeader()
-                 .AllowAnyMethod()
-                 .AllowCredentials());
-   });
+builder.Services.AddSignalR();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AngularDev", policy =>
+        policy.WithOrigins("http://localhost:4200")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials());
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -74,7 +88,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-   app.UseCors("AngularDev");
+app.UseCors("AngularDev");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -84,5 +98,6 @@ app.MapAuthEndpoints();
 app.MapPatientEndpoints();
 app.MapBedEndpoints();
 app.MapAdmissionEndpoints();
+app.MapHub<AdmissionsHub>("/hubs/admissions");
 
 app.Run();
