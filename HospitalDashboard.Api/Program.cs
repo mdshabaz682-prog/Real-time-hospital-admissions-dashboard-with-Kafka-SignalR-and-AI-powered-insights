@@ -50,6 +50,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 builder.Services.AddSignalR();
+builder.Services.AddHostedService<ProcessedEventsListener>();
 builder.Services.AddSingleton<EventPublisher>();
 
 builder.Services.AddCors(options =>

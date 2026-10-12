@@ -34,3 +34,6 @@ public class EventPublisher : IDisposable
         _producer.Dispose();
     }
 }
+public record PatientDischarged(
+    Guid EventId, string Type, Guid AdmissionId, Guid BedId,
+    Guid StaffId, DateTime DischargedAt, DateTime OccurredAt);

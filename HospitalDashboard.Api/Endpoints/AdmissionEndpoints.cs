@@ -21,8 +21,22 @@ public static class AdmissionEndpoints
             await db.Admissions.Include(a => a.Patient).Include(a => a.Bed).Include(a => a.Staff)
                 .FirstOrDefaultAsync(a => a.Id == id) is Admission a ? Results.Ok(a) : Results.NotFound());
 
-        
-                group.MapPost("/", async (Admission admission, ClaimsPrincipal user, HospitalDashboardContext db, EventPublisher events) =>
+
+        group.MapPost("/{id}/discharge", async (Guid id, ClaimsPrincipal user, HospitalDashboardContext db, EventPublisher events) =>
+        {
+            var admission = await db.Admissions.FindAsync(id);
+            if (admission is null) return Results.NotFound();
+            if (admission.DischargedAt is not null) return Results.BadRequest("Already discharged.");
+
+            var staffId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var now = DateTime.UtcNow;
+
+            await events.PublishAsync("bed-events", id.ToString(),
+                new PatientDischarged(Guid.NewGuid(), "PatientDischarged", id, admission.BedId, staffId, now, now));
+
+            return Results.Accepted($"/api/admissions/{id}", new { admissionId = id });
+        });
+        group.MapPost("/", async (Admission admission, ClaimsPrincipal user, HospitalDashboardContext db, EventPublisher events) =>
         {
             if (!await db.Patients.AnyAsync(p => p.Id == admission.PatientId))
                 return Results.BadRequest($"Patient {admission.PatientId} does not exist.");
@@ -42,6 +56,7 @@ public static class AdmissionEndpoints
             return Results.Accepted($"/api/admissions/{admissionId}", new { admissionId });
         });
 
+        
         group.MapPut("/{id}", async (Guid id, Admission input, HospitalDashboardContext db, IHubContext<AdmissionsHub> hub) =>
         {
             var admission = await db.Admissions.FindAsync(id);

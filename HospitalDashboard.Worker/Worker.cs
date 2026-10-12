@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 public record AdmissionCreated(Guid EventId, string Type, Guid AdmissionId, Guid PatientId,
     Guid BedId, Guid StaffId, DateTime AdmittedAt, DateTime OccurredAt);
 
+public record PatientDischarged(Guid EventId, string Type, Guid AdmissionId, Guid BedId,
+    Guid StaffId, DateTime DischargedAt, DateTime OccurredAt);
+
 public record BedStatusChanged(Guid EventId, string Type, Guid BedId, string Status,
     Guid AdmissionId, DateTime OccurredAt);
 
@@ -45,7 +48,7 @@ public class Worker(IServiceScopeFactory scopes, IConfiguration config, ILogger<
 
             try
             {
-                await Handle(msg.Message.Value, producer, ct);
+                await Dispatch(msg.Message.Value, producer, ct);
             }
             catch (Exception ex)
             {
@@ -60,7 +63,21 @@ public class Worker(IServiceScopeFactory scopes, IConfiguration config, ILogger<
         consumer.Close();
     }
 
-    private async Task Handle(string json, IProducer<string, string> producer, CancellationToken ct)
+    private async Task Dispatch(string json, IProducer<string, string> producer, CancellationToken ct)
+    {
+        string type;
+        using (var doc = JsonDocument.Parse(json))
+            type = doc.RootElement.GetProperty("Type").GetString() ?? "";
+
+        switch (type)
+        {
+            case "AdmissionCreated": await HandleAdmission(json, producer, ct); break;
+            case "PatientDischarged": await HandleDischarge(json, producer, ct); break;
+            default: throw new InvalidOperationException($"Unknown event type '{type}'");
+        }
+    }
+
+    private async Task HandleAdmission(string json, IProducer<string, string> producer, CancellationToken ct)
     {
         var evt = JsonSerializer.Deserialize<AdmissionCreated>(json)
                   ?? throw new InvalidOperationException("Could not read event");
@@ -93,10 +110,45 @@ public class Worker(IServiceScopeFactory scopes, IConfiguration config, ILogger<
         await db.SaveChangesAsync(ct);
         await tx.CommitAsync(ct);
 
-        var done = new BedStatusChanged(Guid.NewGuid(), "BedStatusChanged", bed.Id, "Occupied", evt.AdmissionId, DateTime.UtcNow);
-        await producer.ProduceAsync("bed-events.processed",
-            new Message<string, string> { Key = bed.Id.ToString(), Value = JsonSerializer.Serialize(done) }, ct);
-
+        await Publish(producer, bed.Id, "Occupied", evt.AdmissionId, ct);
         log.LogInformation("Admission {Id} saved, bed {Bed} now Occupied", evt.AdmissionId, bed.BedNumber);
+    }
+
+    private async Task HandleDischarge(string json, IProducer<string, string> producer, CancellationToken ct)
+    {
+        var evt = JsonSerializer.Deserialize<PatientDischarged>(json)
+                  ?? throw new InvalidOperationException("Could not read event");
+
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HospitalDashboardContext>();
+
+        var admission = await db.Admissions.FindAsync(new object[] { evt.AdmissionId }, ct)
+                        ?? throw new InvalidOperationException($"Admission {evt.AdmissionId} not found");
+
+        if (admission.DischargedAt is not null)
+        {
+            log.LogInformation("Admission {Id} already discharged, skipping", evt.AdmissionId);
+            return;
+        }
+
+        var bed = await db.Beds.FindAsync(new object[] { admission.BedId }, ct)
+                  ?? throw new InvalidOperationException($"Bed {admission.BedId} not found");
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        admission.DischargedAt = evt.DischargedAt;
+        admission.Status = "Discharged";
+        bed.Status = "Cleaning";
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+
+        await Publish(producer, bed.Id, "Cleaning", admission.Id, ct);
+        log.LogInformation("Admission {Id} discharged, bed {Bed} now Cleaning", admission.Id, bed.BedNumber);
+    }
+
+    private static Task Publish(IProducer<string, string> producer, Guid bedId, string status, Guid admissionId, CancellationToken ct)
+    {
+        var done = new BedStatusChanged(Guid.NewGuid(), "BedStatusChanged", bedId, status, admissionId, DateTime.UtcNow);
+        return producer.ProduceAsync("bed-events.processed",
+            new Message<string, string> { Key = bedId.ToString(), Value = JsonSerializer.Serialize(done) }, ct);
     }
 }

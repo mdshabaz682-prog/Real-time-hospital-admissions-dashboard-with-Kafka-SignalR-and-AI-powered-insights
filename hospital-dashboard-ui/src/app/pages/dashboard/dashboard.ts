@@ -1,6 +1,7 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import * as signalR from '@microsoft/signalr';
 import { API, AuthService } from '../../auth';
 
 type Row = Record<string, any>;
@@ -11,6 +12,7 @@ type Row = Record<string, any>;
     <header>
       <h1>Hospital Dashboard</h1>
       <div>
+        <span class="live" [class.on]="connected()">{{ connected() ? 'Live' : 'Offline' }}</span>
         {{ auth.name }} ({{ auth.role }})
         <button (click)="logout()">Log out</button>
       </div>
@@ -19,6 +21,7 @@ type Row = Record<string, any>;
     <div class="stats">
       <div class="stat"><span>{{ availableBeds() }}</span> Beds available</div>
       <div class="stat"><span>{{ occupiedBeds() }}</span> Beds occupied</div>
+      <div class="stat"><span>{{ cleaningBeds() }}</span> Beds cleaning</div>
       <div class="stat"><span>{{ activeAdmissions() }}</span> Active admissions</div>
       <div class="stat"><span>{{ patients().length }}</span> Patients</div>
     </div>
@@ -38,7 +41,7 @@ type Row = Record<string, any>;
               <td>{{ a['staff']?.name }}</td>
               <td>{{ date(a['admittedAt']) }}</td>
               <td>{{ date(a['dischargedAt']) }}</td>
-              <td><span class="badge" [class]="'badge ' + (a['status'] || '').toLowerCase()">{{ a['status'] }}</span></td>
+              <td><span [class]="'badge ' + (a['status'] || '').toLowerCase()">{{ a['status'] }}</span></td>
             </tr>
           }
         </tbody>
@@ -84,6 +87,8 @@ type Row = Record<string, any>;
     h1 { margin:0; font-size:24px; }
     h2 { font-size:18px; margin:28px 0 8px; }
     button { margin-left:12px; padding:6px 12px; cursor:pointer; }
+    .live { margin-right:12px; padding:2px 10px; border-radius:12px; font-size:12px; background:#eee; color:#666; }
+    .live.on { background:#d9f5e3; color:#0a6b32; }
     .stats { display:flex; gap:16px; flex-wrap:wrap; }
     .stat { border:1px solid #ddd; border-radius:10px; padding:14px 20px; color:#555; font-size:13px; }
     .stat span { display:block; font-size:28px; font-weight:600; color:#111; }
@@ -94,19 +99,42 @@ type Row = Record<string, any>;
     .badge { padding:2px 10px; border-radius:12px; font-size:12px; background:#eee; }
     .badge.available { background:#d9f5e3; color:#0a6b32; }
     .badge.occupied, .badge.admitted { background:#fde2e2; color:#a11; }
+    .badge.cleaning { background:#fff3cd; color:#7a5b00; }
     .badge.discharged { background:#e3e8f5; color:#234; }
     .error { color:#c0392b; }
   `,
 })
-export class Dashboard implements OnInit {
+export class Dashboard implements OnInit, OnDestroy {
   patients = signal<Row[]>([]);
   beds = signal<Row[]>([]);
   admissions = signal<Row[]>([]);
   error = signal('');
+  connected = signal(false);
+  private hub?: signalR.HubConnection;
 
   constructor(private http: HttpClient, public auth: AuthService, private router: Router) {}
 
   ngOnInit() {
+    this.refresh();
+
+    this.hub = new signalR.HubConnectionBuilder()
+      .withUrl(`${API}/hubs/admissions`, { accessTokenFactory: () => this.auth.token ?? '' })
+      .withAutomaticReconnect()
+      .build();
+
+    this.hub.on('DataChanged', () => this.refresh());
+    this.hub.onreconnected(() => { this.connected.set(true); this.refresh(); });
+    this.hub.onclose(() => this.connected.set(false));
+    this.hub.start()
+      .then(() => this.connected.set(true))
+      .catch((e) => console.error('SignalR connection failed', e));
+  }
+
+  ngOnDestroy() {
+    this.hub?.stop();
+  }
+
+  private refresh() {
     this.load('patients', this.patients);
     this.load('beds', this.beds);
     this.load('admissions', this.admissions);
@@ -114,6 +142,7 @@ export class Dashboard implements OnInit {
 
   availableBeds() { return this.beds().filter((b) => b['status'] === 'Available').length; }
   occupiedBeds() { return this.beds().filter((b) => b['status'] === 'Occupied').length; }
+  cleaningBeds() { return this.beds().filter((b) => b['status'] === 'Cleaning').length; }
   activeAdmissions() { return this.admissions().filter((a) => !a['dischargedAt']).length; }
 
   date(v: string | null) {
@@ -131,4 +160,4 @@ export class Dashboard implements OnInit {
     this.auth.logout();
     this.router.navigate(['/login']);
   }
-}
+}s
