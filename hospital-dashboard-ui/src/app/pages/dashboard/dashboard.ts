@@ -57,8 +57,10 @@ type Row = Record<string, any>;
             <tr>
               <td>{{ b['ward'] }}</td>
               <td>{{ b['bedNumber'] }}</td>
-              <td><span [class]="'badge ' + (b['status'] || '').toLowerCase()">{{ b['status'] }}</span></td>
-            </tr>
+                            <td>
+                <span [class]="'badge ' + (b['status'] || '').toLowerCase()">{{ b['status'] }}</span>
+                @if (b['status'] === 'Cleaning') { <button (click)="markClean(b['id'])">Mark clean</button> }
+              </td>
           }
         </tbody>
       </table>
@@ -129,7 +131,6 @@ export class Dashboard implements OnInit, OnDestroy {
       .then(() => this.connected.set(true))
       .catch((e) => console.error('SignalR connection failed', e));
   }
-
   ngOnDestroy() {
     this.hub?.stop();
   }
@@ -156,8 +157,14 @@ export class Dashboard implements OnInit, OnDestroy {
     });
   }
 
+  markClean(id: string) {
+    this.http.post(`${API}/api/beds/${id}/clean`, {}).subscribe({
+      error: (e) => this.error.set(`Could not mark bed clean (${e.status}).`),
+    });
+  }
+
   logout() {
     this.auth.logout();
     this.router.navigate(['/login']);
   }
-}s
+}

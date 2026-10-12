@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using HospitalDashboard.Api.Messaging;using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using HospitalDashboard.Api.Models;
 
@@ -22,7 +23,18 @@ public static class BedEndpoints
             await db.SaveChangesAsync();
             return Results.Created($"/api/beds/{bed.Id}", bed);
         });
+        group.MapPost("/{id}/clean", async (Guid id, ClaimsPrincipal user, HospitalDashboardContext db, EventPublisher events) =>
+        {
+            var bed = await db.Beds.FindAsync(id);
+            if (bed is null) return Results.NotFound();
+            if (bed.Status != "Cleaning") return Results.BadRequest($"Bed is {bed.Status}, not Cleaning.");
 
+            var staffId = Guid.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await events.PublishAsync("bed-events", id.ToString(),
+                new BedCleaned(Guid.NewGuid(), "BedCleaned", id, staffId, DateTime.UtcNow));
+
+            return Results.Accepted($"/api/beds/{id}", new { bedId = id });
+        });
         group.MapPut("/{id}", async (Guid id, Bed input, HospitalDashboardContext db) =>
         {
             var bed = await db.Beds.FindAsync(id);

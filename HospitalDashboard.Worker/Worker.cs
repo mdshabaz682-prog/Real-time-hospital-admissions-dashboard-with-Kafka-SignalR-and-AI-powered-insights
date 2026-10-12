@@ -10,6 +10,8 @@ public record AdmissionCreated(Guid EventId, string Type, Guid AdmissionId, Guid
 public record PatientDischarged(Guid EventId, string Type, Guid AdmissionId, Guid BedId,
     Guid StaffId, DateTime DischargedAt, DateTime OccurredAt);
 
+public record BedCleaned(Guid EventId, string Type, Guid BedId, Guid StaffId, DateTime OccurredAt);
+
 public record BedStatusChanged(Guid EventId, string Type, Guid BedId, string Status,
     Guid AdmissionId, DateTime OccurredAt);
 
@@ -73,6 +75,7 @@ public class Worker(IServiceScopeFactory scopes, IConfiguration config, ILogger<
         {
             case "AdmissionCreated": await HandleAdmission(json, producer, ct); break;
             case "PatientDischarged": await HandleDischarge(json, producer, ct); break;
+            case "BedCleaned": await HandleBedCleaned(json, producer, ct); break;
             default: throw new InvalidOperationException($"Unknown event type '{type}'");
         }
     }
@@ -143,6 +146,32 @@ public class Worker(IServiceScopeFactory scopes, IConfiguration config, ILogger<
 
         await Publish(producer, bed.Id, "Cleaning", admission.Id, ct);
         log.LogInformation("Admission {Id} discharged, bed {Bed} now Cleaning", admission.Id, bed.BedNumber);
+    }
+
+    private async Task HandleBedCleaned(string json, IProducer<string, string> producer, CancellationToken ct)
+    {
+        var evt = JsonSerializer.Deserialize<BedCleaned>(json)
+                  ?? throw new InvalidOperationException("Could not read event");
+
+        using var scope = scopes.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<HospitalDashboardContext>();
+
+        var bed = await db.Beds.FindAsync(new object[] { evt.BedId }, ct)
+                  ?? throw new InvalidOperationException($"Bed {evt.BedId} not found");
+
+        if (bed.Status == "Available")
+        {
+            log.LogInformation("Bed {Bed} already Available, skipping", bed.BedNumber);
+            return;
+        }
+        if (bed.Status != "Cleaning")
+            throw new InvalidOperationException($"Invalid move: {bed.Status} -> Available");
+
+        bed.Status = "Available";
+        await db.SaveChangesAsync(ct);
+
+        await Publish(producer, bed.Id, "Available", Guid.Empty, ct);
+        log.LogInformation("Bed {Bed} cleaned, now Available", bed.BedNumber);
     }
 
     private static Task Publish(IProducer<string, string> producer, Guid bedId, string status, Guid admissionId, CancellationToken ct)

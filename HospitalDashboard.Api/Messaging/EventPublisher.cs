@@ -37,3 +37,4 @@ public class EventPublisher : IDisposable
 public record PatientDischarged(
     Guid EventId, string Type, Guid AdmissionId, Guid BedId,
     Guid StaffId, DateTime DischargedAt, DateTime OccurredAt);
+    public record BedCleaned(Guid EventId, string Type, Guid BedId, Guid StaffId, DateTime OccurredAt);
