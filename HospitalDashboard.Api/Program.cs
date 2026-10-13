@@ -1,3 +1,4 @@
+using HospitalDashboard.Api.Ai;
 using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -52,7 +53,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<ProcessedEventsListener>();
 builder.Services.AddSingleton<EventPublisher>();
-
+builder.Services.AddHttpClient<ClaudeClient>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AngularDev", policy =>
@@ -101,6 +102,7 @@ app.MapAuthEndpoints();
 app.MapPatientEndpoints();
 app.MapBedEndpoints();
 app.MapAdmissionEndpoints();
+app.MapAiEndpoints();
 app.MapHub<AdmissionsHub>("/hubs/admissions");
 
 app.Run();
