@@ -3,10 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import * as signalR from '@microsoft/signalr';
 import { API, AuthService } from '../../auth';
+import { AskAi } from '../ask-ai/ask-ai';
 
 type Row = Record<string, any>;
 
 @Component({
+    imports: [AskAi],
   selector: 'app-dashboard',
   template: `
     <header>
@@ -27,7 +29,7 @@ type Row = Record<string, any>;
     </div>
 
     @if (error()) { <p class="error">{{ error() }}</p> }
-
+    <app-ask-ai />
     <h2>Admissions</h2>
     <div class="scroll">
       <table>
