@@ -18,6 +18,22 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
+  kafka-init:
+    image: apache/kafka:3.9.0
+    depends_on:
+      - kafka
+    restart: "no"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        for i in $$(seq 1 30); do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --list >/dev/null 2>&1 && break
+          sleep 2
+        done
+        for t in bed-events bed-events.processed bed-events.dlq; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:29092 --create --if-not-exists --topic $$t --partitions 1 --replication-factor 1
+        done
+
   api:
     build:
       context: .
@@ -28,8 +44,10 @@ services:
       Kafka__BootstrapServers: kafka:29092
     ports:
       - "5181:8080"
+    restart: unless-stopped
     depends_on:
-      - kafka
+      kafka-init:
+        condition: service_completed_successfully
 
   worker:
     build:
@@ -39,8 +57,10 @@ services:
     environment:
       DOTNET_ENVIRONMENT: Development
       Kafka__BootstrapServers: kafka:29092
+    restart: unless-stopped
     depends_on:
-      - kafka
+      kafka-init:
+        condition: service_completed_successfully
 
   ui:
     build:
