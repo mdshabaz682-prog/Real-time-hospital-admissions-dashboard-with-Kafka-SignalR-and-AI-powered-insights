@@ -4,11 +4,12 @@ import { Router } from '@angular/router';
 import * as signalR from '@microsoft/signalr';
 import { API, AuthService } from '../../auth';
 import { AskAi } from '../ask-ai/ask-ai';
+import { AdmitForm } from '../admit-form/admit-form';
 
 type Row = Record<string, any>;
 
 @Component({
-    imports: [AskAi],
+imports: [AskAi, AdmitForm],
   selector: 'app-dashboard',
   template: `
     <header>
@@ -29,6 +30,7 @@ type Row = Record<string, any>;
     </div>
 
     @if (error()) { <p class="error">{{ error() }}</p> }
+    <app-admit-form />
     <app-ask-ai />
     <h2>Admissions</h2>
     <div class="scroll">
