@@ -45,7 +45,7 @@ imports: [AskAi, AdmitForm],
               <td>{{ a['staff']?.name }}</td>
               <td>{{ date(a['admittedAt']) }}</td>
               <td>{{ date(a['dischargedAt']) }}</td>
-              <td><span [class]="'badge ' + (a['status'] || '').toLowerCase()">{{ a['status'] }}</span></td>
+              <td><span [class]="'badge ' + (a['status'] || '').toLowerCase()">{{ a['status'] }}</span> @if (a['status'] === 'Admitted') { <button (click)="discharge(a['id'])">Discharge</button> }</td>
             </tr>
           }
         </tbody>
@@ -164,6 +164,12 @@ export class Dashboard implements OnInit, OnDestroy {
   markClean(id: string) {
     this.http.post(`${API}/api/beds/${id}/clean`, {}).subscribe({
       error: (e) => this.error.set(`Could not mark bed clean (${e.status}).`),
+    });
+  }
+
+  discharge(id: string) {
+    this.http.post(`${API}/api/admissions/${id}/discharge`, {}).subscribe({
+      error: () => alert('Could not discharge this patient.')
     });
   }
 
