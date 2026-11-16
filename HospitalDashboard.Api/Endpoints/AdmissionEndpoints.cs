@@ -41,6 +41,9 @@ public static class AdmissionEndpoints
             if (!await db.Patients.AnyAsync(p => p.Id == admission.PatientId))
                 return Results.BadRequest($"Patient {admission.PatientId} does not exist.");
 
+            if (await db.Admissions.AnyAsync(a => a.PatientId == admission.PatientId && a.Status == "Admitted"))
+                return Results.BadRequest("Patient is already admitted.");
+
             var bed = await db.Beds.FindAsync(admission.BedId);
             if (bed is null) return Results.BadRequest($"Bed {admission.BedId} does not exist.");
             if (bed.Status != "Available") return Results.BadRequest($"Bed is {bed.Status}, not Available.");

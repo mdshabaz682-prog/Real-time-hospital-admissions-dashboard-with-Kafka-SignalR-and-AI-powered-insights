@@ -58,7 +58,11 @@ export class AdmitForm implements OnInit {
   }
 
   load() {
-    this.http.get<Row[]>(`${API}/api/patients`).subscribe(p => this.patients.set(p));
+    this.http.get<Row[]>(`${API}/api/admissions`).subscribe(adm => {
+      const busy = new Set(adm.filter(a => a['status'] === 'Admitted').map(a => a['patientId']));
+      this.http.get<Row[]>(`${API}/api/patients`).subscribe(p =>
+        this.patients.set(p.filter(x => !busy.has(x['id']))));
+    });
     this.http.get<Row[]>(`${API}/api/beds`).subscribe(b =>
       this.beds.set(b.filter(x => x['status'] === 'Available')));
   }
