@@ -81,7 +81,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<HospitalDashboardContext>();
-    DataSeeder.SeedData(db);
+    DataSeeder.SeedData(db, app.Configuration);
 }
 
 if (app.Environment.IsDevelopment())

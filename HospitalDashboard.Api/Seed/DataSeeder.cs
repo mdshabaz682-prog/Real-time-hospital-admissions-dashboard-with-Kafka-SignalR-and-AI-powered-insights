@@ -4,19 +4,24 @@ namespace HospitalDashboard.Api.Seed;
 
 public static class DataSeeder
 {
-    public static void SeedData(HospitalDashboardContext db)
+    public static void SeedData(HospitalDashboardContext db, IConfiguration config)
     {
         if (db.Patients.Any()) return;
+
+        var seedPassword = config["Seed:Password"];
+        if (string.IsNullOrWhiteSpace(seedPassword))
+            throw new InvalidOperationException("Seed:Password is not configured; cannot seed staff accounts.");
+        var hash = BCrypt.Net.BCrypt.HashPassword(seedPassword);
 
         var staff = new List<Staff>
         {
             new() {
                 Name = "Shabaaz Mohammad", Role = "Admin", Email = "shabaaz@hospital.example",
-                Username = "shabaaz.md", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!")
+                Username = "shabaaz.md", PasswordHash = hash
             },
             new() {
                 Name = "Jilani Shaik", Role = "Nurse", Email = "j.shaik@hospital.example",
-                Username = "jilani.shaik", PasswordHash = BCrypt.Net.BCrypt.HashPassword("Password123!")
+                Username = "jilani.shaik", PasswordHash = hash
             },
         };
 
