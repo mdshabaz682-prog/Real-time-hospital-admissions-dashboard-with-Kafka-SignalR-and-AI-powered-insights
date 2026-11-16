@@ -58,17 +58,5 @@ public static class AdmissionEndpoints
 
             return Results.Accepted($"/api/admissions/{admissionId}", new { admissionId });
         });
-
-        
-        group.MapDelete("/{id}", async (Guid id, HospitalDashboardContext db, IHubContext<AdmissionsHub> hub) =>
-        {
-            var admission = await db.Admissions.FindAsync(id);
-            if (admission is null) return Results.NotFound();
-
-            db.Admissions.Remove(admission);
-            await db.SaveChangesAsync();
-            await hub.Clients.All.SendAsync("DataChanged", "admissions");
-            return Results.NoContent();
-        }).RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" });
     }
 }
