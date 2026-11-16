@@ -60,26 +60,6 @@ public static class AdmissionEndpoints
         });
 
         
-        group.MapPut("/{id}", async (Guid id, Admission input, HospitalDashboardContext db, IHubContext<AdmissionsHub> hub) =>
-        {
-            var admission = await db.Admissions.FindAsync(id);
-            if (admission is null) return Results.NotFound();
-
-            admission.Status = input.Status;
-            admission.DischargedAt = input.DischargedAt;
-            admission.StaffId = input.StaffId;
-
-            if (input.Status == "Discharged")
-            {
-                var bed = await db.Beds.FindAsync(admission.BedId);
-                if (bed is not null) bed.Status = "Available";
-            }
-
-            await db.SaveChangesAsync();
-            await hub.Clients.All.SendAsync("DataChanged", "admissions");
-            return Results.NoContent();
-        });
-
         group.MapDelete("/{id}", async (Guid id, HospitalDashboardContext db, IHubContext<AdmissionsHub> hub) =>
         {
             var admission = await db.Admissions.FindAsync(id);
