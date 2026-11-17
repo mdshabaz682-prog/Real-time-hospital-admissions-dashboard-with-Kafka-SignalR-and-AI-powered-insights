@@ -12,6 +12,7 @@ public class Staff
     [Required, MaxLength(50)]
     public string Role { get; set; } = string.Empty;
        [JsonIgnore]
+    [System.ComponentModel.DataAnnotations.MaxLength(150)]
     public string? Email { get; set; }
 
     [Required, MaxLength(50)]

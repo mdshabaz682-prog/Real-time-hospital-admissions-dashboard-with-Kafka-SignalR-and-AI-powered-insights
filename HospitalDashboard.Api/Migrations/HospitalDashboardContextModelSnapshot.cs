@@ -56,7 +56,7 @@ namespace HospitalDashboard.Api.Migrations
 
                     b.HasIndex("StaffId");
 
-                    b.ToTable("Admissions");
+                    b.ToTable("Admissions", (string)null);
                 });
 
             modelBuilder.Entity("HospitalDashboard.Api.Models.AuditLog", b =>
@@ -88,7 +88,7 @@ namespace HospitalDashboard.Api.Migrations
 
                     b.HasIndex("StaffId");
 
-                    b.ToTable("AuditLogs");
+                    b.ToTable("AuditLogs", (string)null);
                 });
 
             modelBuilder.Entity("HospitalDashboard.Api.Models.Bed", b =>
@@ -114,7 +114,7 @@ namespace HospitalDashboard.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Beds");
+                    b.ToTable("Beds", (string)null);
                 });
 
             modelBuilder.Entity("HospitalDashboard.Api.Models.Patient", b =>
@@ -146,7 +146,7 @@ namespace HospitalDashboard.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Patients");
+                    b.ToTable("Patients", (string)null);
                 });
 
             modelBuilder.Entity("HospitalDashboard.Api.Models.Staff", b =>
@@ -180,7 +180,7 @@ namespace HospitalDashboard.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Staff");
+                    b.ToTable("Staff", (string)null);
                 });
 
             modelBuilder.Entity("HospitalDashboard.Api.Models.Admission", b =>
