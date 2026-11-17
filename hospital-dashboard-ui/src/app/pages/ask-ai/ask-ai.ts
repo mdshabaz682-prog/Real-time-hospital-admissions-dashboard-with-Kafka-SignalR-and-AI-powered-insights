@@ -65,7 +65,7 @@ export class AskAi {
     this.rows.set([]);
 
     this.http.post<{ sql: string; rows: Record<string, unknown>[] }>(
-      'http://localhost:5181/api/ai/query', { question: this.question }
+      '/api/ai/query', { question: this.question }
     ).subscribe({
       next: res => {
         this.sql.set(res.sql);

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { tap } from 'rxjs';
 
-export const API = 'http://localhost:5181';
+export const API = '';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

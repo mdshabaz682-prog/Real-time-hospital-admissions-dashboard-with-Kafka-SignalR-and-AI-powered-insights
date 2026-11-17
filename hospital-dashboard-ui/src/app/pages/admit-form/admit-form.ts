@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
 type Row = Record<string, any>;
-const API = 'http://localhost:5181';
+const API = '';
 
 @Component({
   selector: 'app-admit-form',
