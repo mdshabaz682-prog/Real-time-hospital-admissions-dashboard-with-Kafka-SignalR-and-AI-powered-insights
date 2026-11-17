@@ -29,14 +29,14 @@ public class Worker(IServiceScopeFactory scopes, IConfiguration config, ILogger<
             GroupId = "bed-event-processor",
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = false
-        }).Build();
+        }.WithSasl(config)).Build();
 
         using var producer = new ProducerBuilder<string, string>(new ProducerConfig
         {
             BootstrapServers = servers,
             Acks = Acks.All,
             EnableIdempotence = true
-        }).Build();
+        }.WithSasl(config)).Build();
 
         consumer.Subscribe("bed-events");
         log.LogInformation("Worker listening on bed-events...");

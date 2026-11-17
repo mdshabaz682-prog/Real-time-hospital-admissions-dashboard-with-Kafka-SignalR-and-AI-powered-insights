@@ -18,7 +18,7 @@ public class EventPublisher : IDisposable
             BootstrapServers = config["Kafka:BootstrapServers"] ?? "localhost:9092",
             Acks = Acks.All,
             EnableIdempotence = true
-        }).Build();
+        }.WithSasl(config)).Build();
     }
 
     public Task PublishAsync<T>(string topic, string key, T evt) =>

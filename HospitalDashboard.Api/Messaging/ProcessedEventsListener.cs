@@ -16,7 +16,7 @@ public class ProcessedEventsListener(IHubContext<AdmissionsHub> hub, IConfigurat
             BootstrapServers = config["Kafka:BootstrapServers"] ?? "localhost:9092",
             GroupId = "api-signalr-broadcaster",
             AutoOffsetReset = AutoOffsetReset.Latest
-        }).Build();
+        }.WithSasl(config)).Build();
 
         consumer.Subscribe("bed-events.processed");
         log.LogInformation("API listening on bed-events.processed");
