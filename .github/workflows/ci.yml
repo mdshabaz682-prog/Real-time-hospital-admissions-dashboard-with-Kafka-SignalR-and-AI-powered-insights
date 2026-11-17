@@ -16,6 +16,8 @@ jobs:
           dotnet-version: 9.0.x
       - name: Build API
         run: dotnet build HospitalDashboard.Api/HospitalDashboard.Api.csproj -c Release
+      - name: Test API
+        run: dotnet test HospitalDashboard.Api.Tests/HospitalDashboard.Api.Tests.csproj -c Release
       - name: Build worker
         run: dotnet build HospitalDashboard.Worker/HospitalDashboard.Worker.csproj -c Release
 
